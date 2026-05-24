@@ -158,7 +158,7 @@
         </div>
         <input id="licenseKeyInput" type="text" 
           class="w-full p-4 bg-slate-900/80 border border-slate-600 rounded-xl text-white placeholder-slate-500 mb-4 focus:border-orange-500 focus:outline-none text-center text-lg tracking-widest uppercase font-mono"
-          placeholder="XXXX-XXX-XXX">
+          placeholder="ZAIKA-009-ANG">
         <div class="flex gap-3">
           <button onclick="validateLicenseKey()" 
             class="flex-1 bg-orange-600 hover:bg-orange-500 text-white font-bold py-3 rounded-xl transition">
@@ -261,7 +261,7 @@
     <!-- FOOTER -->
     <div class="text-center text-xs text-slate-600 mt-8 pb-8 space-y-1">
       <p>ReinstateKit is not affiliated with Amazon. Use at your own risk.</p>
-      <p>Built by a seller, for sellers. Need help? DM <span class="text-orange-500 font-medium">@yourhandle</span></p>
+      <p>Built by a seller, for sellers. Need help? DM <span class="text-orange-500 font-medium">@mdarmaantanveer</span></p>
     </div>
   </div>
 
@@ -390,7 +390,7 @@ async function generateAppeal() {
     if (!isPro) {
       // FREE: Single model, all-in-one prompt
       document.getElementById('loadingText').textContent = 'Generating appeal...';
-      const result = await callModel('google/gemini-flash-1.5', buildFreePrompt(type, text, sellerName, asins));
+      const result = await callModel('google/gemini-1.5-flash', buildFreePrompt(type, text, sellerName, asins));
       const content = result.choices[0].message.content;
 
       const parts = parseSections(content);
@@ -411,7 +411,7 @@ async function generateAppeal() {
       poa = poaRes.choices[0].message.content;
 
       document.getElementById('loadingText').textContent = 'Building email & checklist...';
-      const emailRes = await callModel('google/gemini-flash-1.5', buildEmailPrompt(type, sellerName, poa));
+      const emailRes = await callModel('google/gemini-1.5-flash', buildEmailPrompt(type, sellerName, poa));
       email = emailRes.choices[0].message.content;
 
       documents = extractDocuments(analysis);
@@ -689,4 +689,3 @@ function resetForm() {
 </script>
 </body>
 </html>
-  
