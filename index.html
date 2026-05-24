@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReinstateKit — Amazon Appeal Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    .gradient-bg { background: linear-gradient(135deg, #0b0f19 0%, #1a1f2e 100%); }
+    .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(148, 163, 184, 0.1); }
+    .orange-glow { box-shadow: 0 0 30px rgba(249, 115, 22, 0.15); }
+    .pro-gradient { background: linear-gradient(90deg, #f59e0b, #ea580c); }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .animate-spin-slow { animation: spin 3s linear infinite; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body class="gradient-bg text-slate-200 min-h-screen antialiased">
+
+  <!-- PRO BADGE -->
+  <div id="proBadge" class="hidden fixed top-4 right-4 z-50 pro-gradient text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-lg tracking-wide">
+    PRO UNLOCKED
+  </div>
+
+  <div class="max-w-3xl mx-auto px-4 py-8 md:py-12">
+
+    <!-- HEADER -->
+    <div class="text-center mb-10">
+      <div class="inline-flex items-center justify-center w-14 h-14 bg-orange-500/10 rounded-2xl mb-4 border border-orange-500/20">
+        <span class="text-3xl">🛡️</span>
+      </div>
+      <h1 class="text-4xl md:text-5xl font-black text-white tracking-tight mb-2">ReinstateKit</h1>
+      <p class="text-slate-400 text-lg">Amazon Seller Performance Appeal Generator</p>
+      <div class="mt-4 inline-flex items-center gap-2 text-xs text-slate-500 bg-slate-800/50 px-4 py-1.5 rounded-full border border-slate-700/50">
+        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+        Uses your OpenRouter API key — nothing leaves your browser
+      </div>
+    </div>
+
+    <!-- STEP 1: API KEY -->
+    <div id="stepSetup" class="glass rounded-2xl p-6 md:p-8 mb-6">
+      <div class="flex items-center gap-3 mb-6">
+        <span class="bg-orange-500 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">1</span>
+        <h2 class="text-xl font-bold text-white">Connect OpenRouter</h2>
+      </div>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-2">OpenRouter API Key</label>
+          <input id="apiKeyInput" type="password" 
+            class="w-full p-4 bg-slate-900/80 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:border-orange-500 focus:outline-none transition text-sm"
+            placeholder="sk-or-v1-...">
+          <p class="text-xs text-slate-500 mt-2">Get a free key at <span class="text-orange-400">openrouter.ai/keys</span>. Your key is stored locally in this browser only.</p>
+        </div>
+        <button onclick="saveApiKey()" 
+          class="w-full bg-orange-600 hover:bg-orange-500 text-white font-bold py-4 rounded-xl transition orange-glow text-lg">
+          Save & Continue
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 2: FORM -->
+    <div id="stepForm" class="hidden glass rounded-2xl p-6 md:p-8 mb-6">
+      <div class="flex items-center gap-3 mb-6">
+        <span class="bg-orange-500 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">2</span>
+        <h2 class="text-xl font-bold text-white">Suspension Details</h2>
+      </div>
+
+      <div class="space-y-5">
+        <!-- VIOLATION TYPE -->
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-2">Violation Type</label>
+          <select id="violationType" onchange="checkViolationAccess()" 
+            class="w-full p-4 bg-slate-900/80 border border-slate-600 rounded-xl text-white focus:border-orange-500 focus:outline-none appearance-none">
+            <optgroup label="FREE TIER">
+              <option value="inauthentic">Inauthentic / Counterfeit</option>
+              <option value="used_sold_as_new">Used Sold as New</option>
+            </optgroup>
+            <optgroup label="PRO FEATURES 🔒">
+              <option value="ip_complaint">Intellectual Property Complaint</option>
+              <option value="odr">Order Defect Rate (ODR)</option>
+              <option value="late_shipment">Late Shipment Rate</option>
+              <option value="review_manipulation">Review Manipulation</option>
+              <option value="linked_account">Linked Account / Multiple Accounts</option>
+              <option value="identity_verification">Identity Verification Failed</option>
+              <option value="safety_complaint">Product Safety Complaint</option>
+              <option value="restricted_products">Restricted Products</option>
+              <option value="dropshipping">Dropshipping Policy Violation</option>
+              <option value="asin_creation">ASIN Creation Abuse</option>
+            </optgroup>
+          </select>
+          <p id="violationNote" class="text-xs mt-2"></p>
+        </div>
+
+        <!-- SUSPENSION NOTICE -->
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-2">Paste Amazon's Suspension Notice</label>
+          <textarea id="suspensionText" rows="5" 
+            class="w-full p-4 bg-slate-900/80 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:border-orange-500 focus:outline-none text-sm leading-relaxed"
+            placeholder="Paste the EXACT email from Amazon Seller Performance here..."></textarea>
+        </div>
+
+        <!-- SELLER INFO -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">Seller / Business Name</label>
+            <input id="sellerName" type="text" 
+              class="w-full p-4 bg-slate-900/80 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:border-orange-500 focus:outline-none"
+              placeholder="ABC Retail LLC">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">ASINs Affected (optional)</label>
+            <input id="asinInput" type="text" 
+              class="w-full p-4 bg-slate-900/80 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:border-orange-500 focus:outline-none"
+              placeholder="B08N5WRWNW">
+          </div>
+        </div>
+
+        <!-- UPGRADE BANNER -->
+        <div id="upgradeBanner" class="hidden bg-gradient-to-r from-amber-900/40 to-orange-900/40 border border-orange-500/40 rounded-xl p-5">
+          <div class="flex flex-col md:flex-row items-start md:items-center gap-4">
+            <div class="text-3xl">🔒</div>
+            <div class="flex-1">
+              <h3 class="font-bold text-orange-400 mb-1">Pro Feature Required</h3>
+              <p class="text-sm text-slate-300 mb-3">
+                <span id="selectedViolationName">This violation type</span> requires legal-precision language, supplier documentation guidance, and escalation templates. Pro handles the complex suspensions that kill accounts.
+              </p>
+              <div class="flex flex-col sm:flex-row gap-3">
+                <a href="https://whop.com/heritage-mastery-kitchen/reinstatekit-pro/" target="_blank" 
+                  class="inline-flex items-center justify-center bg-orange-600 hover:bg-orange-500 text-white font-bold px-5 py-2.5 rounded-lg text-sm transition shadow-lg shadow-orange-900/50">
+                  Upgrade to Pro — $49 Lifetime
+                </a>
+                <button onclick="showLicenseModal()" 
+                  class="inline-flex items-center justify-center bg-slate-700 hover:bg-slate-600 text-white font-medium px-5 py-2.5 rounded-lg text-sm transition">
+                  I Have a Code
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- GENERATE BUTTON -->
+        <button id="generateBtn" onclick="generateAppeal()" 
+          class="w-full bg-orange-600 hover:bg-orange-500 text-white font-bold py-4 rounded-xl transition orange-glow flex items-center justify-center gap-2 text-lg">
+          <span>Generate Appeal Package</span>
+          <span class="text-orange-200 text-sm font-normal">~60 sec</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- LICENSE MODAL -->
+    <div id="licenseModal" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+      <div class="glass rounded-2xl p-6 md:p-8 max-w-md w-full border border-slate-600/50">
+        <div class="text-center mb-6">
+          <div class="text-4xl mb-3">🔑</div>
+          <h3 class="text-2xl font-bold text-white mb-2">Unlock Pro</h3>
+          <p class="text-sm text-slate-400">Enter your license code to unlock all violation types and Pro features.</p>
+        </div>
+        <input id="licenseKeyInput" type="text" 
+          class="w-full p-4 bg-slate-900/80 border border-slate-600 rounded-xl text-white placeholder-slate-500 mb-4 focus:border-orange-500 focus:outline-none text-center text-lg tracking-widest uppercase font-mono"
+          placeholder="XXXX-XXX-XXX">
+        <div class="flex gap-3">
+          <button onclick="validateLicenseKey()" 
+            class="flex-1 bg-orange-600 hover:bg-orange-500 text-white font-bold py-3 rounded-xl transition">
+            Unlock
+          </button>
+          <button onclick="hideLicenseModal()" 
+            class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium py-3 rounded-xl transition">
+            Cancel
+          </button>
+        </div>
+        <p class="text-xs text-slate-500 mt-4 text-center">
+          Don't have a code? <a href="https://whop.com/heritage-mastery-kitchen/reinstatekit-pro/" target="_blank" class="text-orange-400 hover:underline font-medium">Get Pro for $49</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- LOADING -->
+    <div id="loadingState" class="hidden text-center py-16">
+      <div class="inline-block w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-6"></div>
+      <p class="text-slate-400 text-lg" id="loadingText">Analyzing suspension notice...</p>
+    </div>
+
+    <!-- STEP 3: OUTPUT -->
+    <div id="stepOutput" class="hidden space-y-6">
+
+      <!-- ANALYSIS -->
+      <div class="glass rounded-2xl p-6 border-l-4 border-blue-500">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-blue-400 flex items-center gap-2">
+            <span>📋</span> Suspension Analysis
+          </h3>
+          <span class="text-xs bg-blue-900/40 text-blue-300 px-2 py-1 rounded border border-blue-700/50">AI-Generated</span>
+        </div>
+        <div id="analysisOutput" class="text-sm text-slate-300 leading-relaxed space-y-2"></div>
+      </div>
+
+      <!-- EMAIL -->
+      <div class="glass rounded-2xl p-6 border-l-4 border-orange-500">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-orange-400 flex items-center gap-2">
+            <span>✉️</span> Email to Seller Performance
+          </h3>
+          <button onclick="copySection('emailOutput')" class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg transition">
+            Copy
+          </button>
+        </div>
+        <div id="emailOutput" class="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed font-mono bg-slate-900/50 p-4 rounded-xl border border-slate-700/50"></div>
+      </div>
+
+      <!-- POA -->
+      <div class="glass rounded-2xl p-6 border-l-4 border-green-500">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-green-400 flex items-center gap-2">
+            <span>📄</span> Plan of Action (POA)
+          </h3>
+          <button onclick="copySection('poaOutput')" class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg transition">
+            Copy
+          </button>
+        </div>
+        <div id="poaOutput" class="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed font-mono bg-slate-900/50 p-4 rounded-xl border border-slate-700/50"></div>
+      </div>
+
+      <!-- DOCUMENTS -->
+      <div class="glass rounded-2xl p-6 border-l-4 border-amber-500">
+        <h3 class="font-bold text-amber-400 flex items-center gap-2 mb-3">
+          <span>📎</span> Required Documents Checklist
+        </h3>
+        <ul id="documentsList" class="text-sm text-slate-300 space-y-2"></ul>
+      </div>
+
+      <!-- ESCALATION (Pro) -->
+      <div id="escalationSection" class="hidden glass rounded-2xl p-6 border-l-4 border-purple-500">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-purple-400 flex items-center gap-2">
+            <span>🚀</span> Escalation Template (If Rejected)
+          </h3>
+          <span class="text-xs bg-purple-900/40 text-purple-300 px-2 py-1 rounded border border-purple-700/50">PRO</span>
+        </div>
+        <div id="escalationOutput" class="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed font-mono bg-slate-900/50 p-4 rounded-xl border border-slate-700/50"></div>
+      </div>
+
+      <!-- STICKY ACTION BAR -->
+      <div class="sticky bottom-4 bg-slate-900/95 border border-slate-700/50 rounded-xl p-4 backdrop-blur flex flex-col sm:flex-row gap-3 shadow-2xl">
+        <button onclick="copyAll()" 
+          class="flex-1 bg-orange-600 hover:bg-orange-500 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2">
+          <span>Copy Complete Package</span>
+        </button>
+        <button onclick="resetForm()" 
+          class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium py-3 rounded-xl transition">
+          New Appeal
+        </button>
+      </div>
+
+      <!-- FREE WATERMARK -->
+      <div id="freeWatermark" class="text-center text-xs text-slate-600 pt-2 pb-4">
+        Generated by ReinstateKit Free — <a href="https://whop.com/heritage-mastery-kitchen/reinstatekit-pro/" target="_blank" class="text-orange-500 hover:underline">Upgrade to Pro</a> for all violation types
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="text-center text-xs text-slate-600 mt-8 pb-8 space-y-1">
+      <p>ReinstateKit is not affiliated with Amazon. Use at your own risk.</p>
+      <p>Built by a seller, for sellers. Need help? DM <span class="text-orange-500 font-medium">@yourhandle</span></p>
+    </div>
+  </div>
+
+<script>
+// ==================== CONFIG ====================
+const FREE_TYPES = ['inauthentic', 'used_sold_as_new'];
+const PAID_TYPES = ['ip_complaint', 'odr', 'late_shipment', 'review_manipulation', 'linked_account', 'identity_verification', 'safety_complaint', 'restricted_products', 'dropshipping', 'asin_creation'];
+
+const VIOLATION_NAMES = {
+  'inauthentic': 'Inauthentic / Counterfeit',
+  'used_sold_as_new': 'Used Sold as New',
+  'ip_complaint': 'Intellectual Property Complaint',
+  'odr': 'Order Defect Rate (ODR)',
+  'late_shipment': 'Late Shipment Rate',
+  'review_manipulation': 'Review Manipulation',
+  'linked_account': 'Linked Account / Multiple Accounts',
+  'identity_verification': 'Identity Verification Failed',
+  'safety_complaint': 'Product Safety Complaint',
+  'restricted_products': 'Restricted Products',
+  'dropshipping': 'Dropshipping Policy Violation',
+  'asin_creation': 'ASIN Creation Abuse'
+};
+
+const PRO_UNLOCK_CODE = 'ZAIKA-009-ANG';
+
+// ==================== STATE ====================
+let isPro = false;
+
+// ==================== INIT ====================
+window.onload = function() {
+  const savedKey = localStorage.getItem('rk_api_key');
+  const savedUnlock = localStorage.getItem('rk_unlock');
+
+  if (savedUnlock === PRO_UNLOCK_CODE) {
+    isPro = true;
+    document.getElementById('proBadge').classList.remove('hidden');
+  }
+
+  if (savedKey) {
+    document.getElementById('apiKeyInput').value = savedKey;
+    document.getElementById('stepSetup').classList.add('hidden');
+    document.getElementById('stepForm').classList.remove('hidden');
+    // BUG FIX 1: Initialize violation note & button state when form auto-shows on load
+    checkViolationAccess();
+  }
+};
+
+// ==================== API KEY ====================
+function saveApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key || !key.startsWith('sk-or')) {
+    alert('Please enter a valid OpenRouter API key (starts with sk-or-)');
+    return;
+  }
+  localStorage.setItem('rk_api_key', key);
+  document.getElementById('stepSetup').classList.add('hidden');
+  document.getElementById('stepForm').classList.remove('hidden');
+  checkViolationAccess();
+}
+
+// ==================== VIOLATION CHECK ====================
+function checkViolationAccess() {
+  const type = document.getElementById('violationType').value;
+  const banner = document.getElementById('upgradeBanner');
+  const generateBtn = document.getElementById('generateBtn');
+  const note = document.getElementById('violationNote');
+
+  document.getElementById('selectedViolationName').textContent = VIOLATION_NAMES[type];
+
+  if (PAID_TYPES.includes(type) && !isPro) {
+    banner.classList.remove('hidden');
+    generateBtn.classList.add('hidden');
+    note.innerHTML = '<span class="text-orange-400 font-medium">🔒 Pro feature. Upgrade or enter your code to unlock.</span>';
+  } else {
+    banner.classList.add('hidden');
+    generateBtn.classList.remove('hidden');
+    note.innerHTML = isPro ? '<span class="text-green-400 font-medium">✓ Pro unlocked — full access</span>' : '<span class="text-slate-500">Free tier active</span>';
+  }
+}
+
+// ==================== LICENSE MODAL ====================
+function showLicenseModal() {
+  document.getElementById('licenseModal').classList.remove('hidden');
+  document.getElementById('licenseKeyInput').focus();
+}
+
+function hideLicenseModal() {
+  document.getElementById('licenseModal').classList.add('hidden');
+}
+
+function validateLicenseKey() {
+  const input = document.getElementById('licenseKeyInput').value.trim().toUpperCase();
+
+  if (input === PRO_UNLOCK_CODE) {
+    localStorage.setItem('rk_unlock', PRO_UNLOCK_CODE);
+    isPro = true;
+    document.getElementById('proBadge').classList.remove('hidden');
+    // BUG FIX 2: Close modal BEFORE showing toast so toast isn't hidden behind overlay
+    hideLicenseModal();
+    checkViolationAccess();
+    showToast('Pro unlocked! Full access granted.');
+  } else {
+    alert('Invalid code. Please check your license key or purchase Pro on Whop.');
+  }
+}
+
+// ==================== GENERATE ====================
+async function generateAppeal() {
+  const type = document.getElementById('violationType').value;
+  const text = document.getElementById('suspensionText').value.trim();
+  const sellerName = document.getElementById('sellerName').value.trim() || 'Our Company';
+  const asins = document.getElementById('asinInput').value.trim();
+  const apiKey = localStorage.getItem('rk_api_key');
+
+  if (!text) {
+    alert('Please paste the Amazon suspension notice');
+    return;
+  }
+
+  document.getElementById('stepForm').classList.add('hidden');
+  document.getElementById('loadingState').classList.remove('hidden');
+
+  try {
+    let analysis, email, poa, documents, escalation;
+
+    if (!isPro) {
+      // FREE: Single model, all-in-one prompt
+      document.getElementById('loadingText').textContent = 'Generating appeal...';
+      const result = await callModel('google/gemini-flash-1.5', buildFreePrompt(type, text, sellerName, asins));
+      const content = result.choices[0].message.content;
+
+      const parts = parseSections(content);
+      analysis = parts.analysis || 'Analysis not available in free tier.';
+      email = parts.email || buildDefaultEmail(sellerName, type);
+      poa = parts.poa || content;
+      documents = parts.documents?.length ? parts.documents : ['Supplier invoices', 'Product authenticity documentation'];
+      escalation = null;
+
+    } else {
+      // PRO: Two-model synthesis
+      document.getElementById('loadingText').textContent = 'Claude analyzing suspension...';
+      const analysisRes = await callModel('anthropic/claude-3.5-sonnet', buildAnalysisPrompt(type, text, sellerName, asins));
+      analysis = analysisRes.choices[0].message.content;
+
+      document.getElementById('loadingText').textContent = 'GPT-4o writing POA...';
+      const poaRes = await callModel('openai/gpt-4o', buildPOAPrompt(type, text, sellerName, asins, analysis));
+      poa = poaRes.choices[0].message.content;
+
+      document.getElementById('loadingText').textContent = 'Building email & checklist...';
+      const emailRes = await callModel('google/gemini-flash-1.5', buildEmailPrompt(type, sellerName, poa));
+      email = emailRes.choices[0].message.content;
+
+      documents = extractDocuments(analysis);
+
+      document.getElementById('loadingText').textContent = 'Creating escalation template...';
+      const escRes = await callModel('anthropic/claude-3.5-sonnet', buildEscalationPrompt(type, sellerName, poa));
+      escalation = escRes.choices[0].message.content;
+    }
+
+    renderOutput(analysis, email, poa, documents, escalation);
+
+    document.getElementById('loadingState').classList.add('hidden');
+    document.getElementById('stepOutput').classList.remove('hidden');
+
+    document.getElementById('freeWatermark').classList.toggle('hidden', isPro);
+
+    if (escalation && isPro) {
+      document.getElementById('escalationSection').classList.remove('hidden');
+    } else {
+      document.getElementById('escalationSection').classList.add('hidden');
+    }
+
+  } catch (err) {
+    alert('Error: ' + err.message);
+    document.getElementById('loadingState').classList.add('hidden');
+    document.getElementById('stepForm').classList.remove('hidden');
+  }
+}
+
+// ==================== API CALL ====================
+async function callModel(model, prompt) {
+  const key = localStorage.getItem('rk_api_key');
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${key}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': 'https://yourusername.github.io/reinstatekit',
+      'X-Title': 'ReinstateKit'
+    },
+    body: JSON.stringify({
+      model: model,
+      messages: [{role: 'user', content: prompt}],
+      temperature: 0.3,
+      max_tokens: 4000
+    })
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error('API Error: ' + err);
+  }
+
+  return res.json();
+}
+
+// ==================== PROMPT BUILDERS ====================
+function buildFreePrompt(type, text, sellerName, asins) {
+  return `You are an Amazon Seller Performance expert. Write a complete appeal package for this suspension.
+
+VIOLATION: ${VIOLATION_NAMES[type]}
+SELLER: ${sellerName}
+ASINS: ${asins || 'N/A'}
+AMAZON NOTICE: ${text}
+
+Output format:
+---ANALYSIS---
+Brief analysis of what went wrong (2-3 sentences)
+---EMAIL---
+Subject line and email body to send to Seller Performance
+---POA---
+1. ROOT CAUSE: What caused the issue
+2. CORRECTIVE ACTIONS: What we already did to fix it  
+3. PREVENTIVE MEASURES: Systems in place to prevent recurrence
+---DOCUMENTS---
+Bullet list of documents the seller should gather before submitting
+
+Keep it practical and specific. Avoid generic fluff like "we value our customers."`;
+}
+
+function buildAnalysisPrompt(type, text, sellerName, asins) {
+  return `You are a former Amazon Seller Performance investigator. Analyze this suspension notice like an insider.
+
+VIOLATION: ${VIOLATION_NAMES[type]}
+SELLER: ${sellerName}
+ASINS: ${asins || 'N/A'}
+AMAZON NOTICE: ${text}
+
+Provide:
+1. What Amazon REALLY cares about (the hidden concern behind the notice)
+2. What specific evidence/documents will convince them
+3. What tone the appeal should take (apologetic vs. disputing vs. evidence-based)
+4. Common mistakes sellers make with this violation type
+5. Realistic timeline for reinstatement
+6. Required documents checklist
+
+Be brutally honest. No sugarcoating. Write as if you're advising a friend at 2 AM while their account is bleeding money.`;
+}
+
+function buildPOAPrompt(type, text, sellerName, asins, analysis) {
+  return `You are an Amazon appeal specialist who has written 500+ successful POAs.
+
+VIOLATION: ${VIOLATION_NAMES[type]}
+SELLER: ${sellerName}
+ASINS: ${asins || 'N/A'}
+AMAZON NOTICE: ${text}
+ANALYSIS: ${analysis}
+
+Write a professional Plan of Action following Amazon's exact preferred structure:
+
+1. ROOT CAUSE
+- Take responsibility where appropriate
+- Be specific, not generic
+- Reference exact ASINs and dates
+- Explain the operational failure that led to this
+
+2. CORRECTIVE ACTIONS  
+- What was done IMMEDIATELY after suspension
+- Specific steps taken, not "we reviewed our processes"
+- Include metrics if possible
+
+3. PREVENTIVE MEASURES
+- Systems implemented to prevent recurrence
+- Who is responsible for oversight
+- How often audits occur
+- What triggers automatic review
+
+Rules:
+- Write as if a lawyer and Amazon insider collaborated
+- No emotional language, no begging
+- Every claim must be backed by implied documentation
+- Professional business tone
+- 600-900 words total
+
+Output ONLY the POA. No extra commentary.`;
+}
+
+function buildEmailPrompt(type, sellerName, poa) {
+  return `Write the email to send to Amazon Seller Performance along with this POA.
+
+SELLER: ${sellerName}
+VIOLATION: ${VIOLATION_NAMES[type]}
+
+Include:
+- Professional subject line
+- Brief intro acknowledging the suspension
+- Statement of commitment to Amazon's customer trust
+- Reference to attached POA
+- Request for reinstatement
+- Professional sign-off
+
+Keep email under 200 words. Output only the email text.`;
+}
+
+function buildEscalationPrompt(type, sellerName, poa) {
+  return `Write an escalation letter for when the first appeal is rejected or ignored.
+
+SELLER: ${sellerName}
+VIOLATION: ${VIOLATION_NAMES[type]}
+ORIGINAL POA: ${poa.substring(0, 1000)}
+
+This should be sent to:
+- seller-performance@amazon.com (secondary review)
+- Or through Seller Central "Account Health" dashboard
+
+Tone: Firm but professional. Express that the original POA addressed all concerns. Request a specific explanation of what was insufficient. Mention that the seller has complied with all requirements and has documentation ready.
+
+Keep under 300 words. Output only the letter.`;
+}
+
+// ==================== HELPERS ====================
+function parseSections(content) {
+  const parts = {};
+  const analysisMatch = content.match(/---ANALYSIS---([\s\S]*?)(?=---EMAIL---|---POA---|$)/);
+  const emailMatch = content.match(/---EMAIL---([\s\S]*?)(?=---POA---|---DOCUMENTS---|$)/);
+  const poaMatch = content.match(/---POA---([\s\S]*?)(?=---DOCUMENTS---|$)/);
+  const docsMatch = content.match(/---DOCUMENTS---([\s\S]*?)$/);
+
+  if (analysisMatch) parts.analysis = analysisMatch[1].trim();
+  if (emailMatch) parts.email = emailMatch[1].trim();
+  if (poaMatch) parts.poa = poaMatch[1].trim();
+  if (docsMatch) {
+    // BUG FIX 3: Strip the bullet/dash prefix so documents don't render as "☐ - Item"
+    parts.documents = docsMatch[1].trim()
+      .split('\n')
+      .filter(l => l.trim().match(/^[-•*]\s*/))
+      .map(l => l.trim().replace(/^[-•*]\s*/, ''));
+  }
+
+  return parts;
+}
+
+function buildDefaultEmail(sellerName, type) {
+  return `Subject: Plan of Action and Appeal for Account Reinstatement — ${sellerName}
+
+Dear Amazon Seller Performance Team,
+
+Thank you for reviewing our account. We take full responsibility for the ${VIOLATION_NAMES[type]} issue and have implemented comprehensive corrective and preventive measures as detailed in our attached Plan of Action.
+
+We are committed to maintaining the highest standards on Amazon's marketplace and ensuring a positive customer experience.
+
+Please find our detailed POA below. We respectfully request reinstatement of our selling privileges.
+
+Sincerely,
+${sellerName}`;
+}
+
+function extractDocuments(analysis) {
+  const lines = analysis.split('\n');
+  const docs = [];
+  let inDocsSection = false;
+
+  for (const line of lines) {
+    const lower = line.toLowerCase();
+    if (lower.includes('document') || lower.includes('invoice') || lower.includes('checklist') || lower.includes('required')) {
+      inDocsSection = true;
+    }
+    if (inDocsSection && (line.trim().match(/^[-•*]\s*/) || line.trim().match(/^\d+\.\s*/))) {
+      docs.push(line.trim().replace(/^[-•*\d.]\s*/, ''));
+    }
+    if (docs.length > 10) break;
+  }
+
+  return docs.length > 0 ? docs : ['Supplier invoices', 'Product authenticity certificates', 'Business registration documents', 'Inventory removal receipts', 'Supplier contact information'];
+}
+
+function renderOutput(analysis, email, poa, documents, escalation) {
+  document.getElementById('analysisOutput').innerHTML = analysis.replace(/\n/g, '<br>');
+  document.getElementById('emailOutput').textContent = email;
+  document.getElementById('poaOutput').textContent = poa;
+
+  const docsList = document.getElementById('documentsList');
+  docsList.innerHTML = '';
+  documents.forEach(doc => {
+    const li = document.createElement('li');
+    li.className = 'flex items-start gap-3';
+    li.innerHTML = `<span class="text-amber-500 mt-0.5 text-lg">☐</span><span>${doc}</span>`;
+    docsList.appendChild(li);
+  });
+
+  if (escalation) {
+    document.getElementById('escalationOutput').textContent = escalation;
+  }
+}
+
+function copySection(id) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text);
+  showToast('Copied to clipboard!');
+}
+
+function copyAll() {
+  const email = document.getElementById('emailOutput').textContent;
+  const poa = document.getElementById('poaOutput').textContent;
+  const full = `${email}\n\n${poa}`;
+  navigator.clipboard.writeText(full);
+  showToast('Complete package copied! Paste into Seller Central.');
+}
+
+function showToast(msg) {
+  const toast = document.createElement('div');
+  toast.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 bg-green-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold z-50 shadow-2xl animate-bounce';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2500);
+}
+
+function resetForm() {
+  document.getElementById('stepOutput').classList.add('hidden');
+  document.getElementById('stepForm').classList.remove('hidden');
+  document.getElementById('suspensionText').value = '';
+  document.getElementById('violationType').value = 'inauthentic';
+  checkViolationAccess();
+}
+</script>
+</body>
+</html>
